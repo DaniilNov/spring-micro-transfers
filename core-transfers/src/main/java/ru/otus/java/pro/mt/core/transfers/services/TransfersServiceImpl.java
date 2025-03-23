@@ -1,11 +1,13 @@
 package ru.otus.java.pro.mt.core.transfers.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.otus.java.pro.mt.core.transfers.configs.properties.TransfersProperties;
 import ru.otus.java.pro.mt.core.transfers.dtos.ExecuteTransferDtoRq;
 import ru.otus.java.pro.mt.core.transfers.entities.Transfer;
 import ru.otus.java.pro.mt.core.transfers.exceptions_handling.BusinessLogicException;
+import ru.otus.java.pro.mt.core.transfers.kafka.KafkaProducer;
 import ru.otus.java.pro.mt.core.transfers.repositories.TransfersRepository;
 import ru.otus.java.pro.mt.core.transfers.validators.TransferRequestValidator;
 
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransfersServiceImpl implements TransfersService {
@@ -21,6 +24,7 @@ public class TransfersServiceImpl implements TransfersService {
     private final TransferRequestValidator transferRequestValidator;
     private final TransfersProperties transfersProperties;
     private final LimitsServiceImpl limitsService;
+    private final KafkaProducer kafkaProducer;
 
     @Override
     public Optional<Transfer> getTransferById(String id, String clientId) {
@@ -44,6 +48,10 @@ public class TransfersServiceImpl implements TransfersService {
         }
         Transfer transfer = new Transfer(UUID.randomUUID().toString(), "1", "2", "1", "2", "Demo", BigDecimal.ONE);
         save(transfer);
+
+        String message = String.format("{\"transferId\": \"%s\", \"status\": \"EXECUTED\"}", transfer.getId());
+        kafkaProducer.sendMessage("mt.transfers.status.info", message);
+        log.info("Sent message to Kafka: {}", message);
     }
 
     @Override
