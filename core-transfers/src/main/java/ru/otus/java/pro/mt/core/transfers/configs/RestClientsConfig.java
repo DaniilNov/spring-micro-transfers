@@ -4,23 +4,30 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
-import ru.otus.java.pro.mt.core.transfers.configs.properties.RestClientProperties;
 import ru.otus.java.pro.mt.core.transfers.factories.RestClientFactory;
+
+import java.util.Map;
 
 @Configuration
 public class RestClientsConfig {
 
     private final RestClientFactory restClientFactory;
-    private final RestClientProperties restClientProperties;
 
-    public RestClientsConfig(RestClientFactory restClientFactory, RestClientProperties restClientProperties) {
+    public RestClientsConfig(RestClientFactory restClientFactory) {
         this.restClientFactory = restClientFactory;
-        this.restClientProperties = restClientProperties;
     }
 
     @Bean
-    @ConditionalOnMissingBean(RestClient.class)
+    @ConditionalOnMissingBean(name = "limitsRestClient")
     public RestClient limitsClient() {
-        return restClientFactory.createRestClient(restClientProperties);
+        Map<String, RestClient> clients = restClientFactory.restClients();
+        return clients.get("limits");
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "paymentsRestClient")
+    public RestClient paymentsClient() {
+        Map<String, RestClient> clients = restClientFactory.restClients();
+        return clients.get("payments");
     }
 }
