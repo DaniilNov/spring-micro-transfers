@@ -1,11 +1,14 @@
 package ru.otus.java.pro.mt.core.transfers.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.otus.java.pro.mt.core.transfers.configs.properties.TransfersProperties;
 import ru.otus.java.pro.mt.core.transfers.dtos.ExecuteTransferDtoRq;
 import ru.otus.java.pro.mt.core.transfers.entities.Transfer;
 import ru.otus.java.pro.mt.core.transfers.exceptions_handling.BusinessLogicException;
+import ru.otus.java.pro.mt.core.transfers.metrics.CustomMetricsService;
 import ru.otus.java.pro.mt.core.transfers.repositories.TransfersRepository;
 import ru.otus.java.pro.mt.core.transfers.validators.TransferRequestValidator;
 
@@ -21,6 +24,7 @@ public class TransfersServiceImpl implements TransfersService {
     private final TransferRequestValidator transferRequestValidator;
     private final TransfersProperties transfersProperties;
     private final LimitsServiceImpl limitsService;
+    private final CustomMetricsService customMetricsService;
 
     @Override
     public Optional<Transfer> getTransferById(String id, String clientId) {
@@ -33,17 +37,25 @@ public class TransfersServiceImpl implements TransfersService {
     }
 
     @Override
+    public Page<Transfer> getAllTransfers(String clientId, Pageable pageable) {
+        return transfersRepository.findAllByClientId(clientId, pageable);
+    }
+
+    @Override
     public void execute(String clientId, ExecuteTransferDtoRq executeTransferDtoRq) {
         transferRequestValidator.validate(executeTransferDtoRq);
         // execution
         if (!limitsService.isLimitEnough()) {
-            // ...
+            customMetricsService.incrementFailedTransfers();
+            throw new BusinessLogicException("Limit not enough", "LIMIT_NOT_ENOUGH");
         }
         if (executeTransferDtoRq.getAmount().compareTo(transfersProperties.getMaxTransferSum()) > 0) {
-            throw new BusinessLogicException("OOPS", "OOPS_CODE");
+            customMetricsService.incrementFailedTransfers();
+            throw new BusinessLogicException("Amount exceeds maximum limit", "AMOUNT_EXCEEDS_LIMIT");
         }
         Transfer transfer = new Transfer(UUID.randomUUID().toString(), "1", "2", "1", "2", "Demo", BigDecimal.ONE);
         save(transfer);
+        customMetricsService.incrementSuccessfulTransfers();
     }
 
     @Override

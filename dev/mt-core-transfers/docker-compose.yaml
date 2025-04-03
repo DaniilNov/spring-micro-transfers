@@ -1,6 +1,18 @@
-version: '3.8'
-
 services:
+# В prometheus если /etc/prometheus/prometheus.yml то контейнер не стратовал. Добавил 1 к названию
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./dev/mt-core-transfers/prometheus/prometheus.yml:/etc/prometheus/prometheus1.yml:ro
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+
   core-transfers-postgres:
     image: postgres_custom_ru:latest
     container_name: core-transfers-postgres
@@ -15,11 +27,17 @@ services:
       timeout: 1s
       retries: 3
     volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01.sql
+      - ./dev/mt-core-transfers/postgres/init.sql:/docker-entrypoint-initdb.d/01.sql:ro
+
+  mt-core-transfers:
+    image: mt-core-transfers:latest
+    container_name: mt-core-transfers
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8181:8080"
 
   elasticsearch:
-    # Просто через docker pull elasticsearch:8.7.1
-    # image: docker.elastic.co/elasticsearch/elasticsearch:8.7.1
     image: elasticsearch:8.7.1
     container_name: elasticsearch_springboot
     environment:
@@ -35,7 +53,6 @@ services:
       - elastic
 
   kibana:
-    # image: docker.elastic.co/kibana/kibana:8.7.1
     image: kibana:8.7.1
     container_name: kibana_springboot
     ports:
@@ -49,7 +66,6 @@ services:
       - elastic
 
   logstash:
-    # image: docker.elastic.co/logstash/logstash:8.7.1
     image: logstash:8.7.1
     container_name: logstash_springboot
     volumes:

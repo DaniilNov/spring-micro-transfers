@@ -7,7 +7,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ru.otus.java.pro.mt.core.transfers.dtos.ExecuteTransferDtoRq;
 import ru.otus.java.pro.mt.core.transfers.dtos.TransferDto;
 import ru.otus.java.pro.mt.core.transfers.dtos.TransfersPageDto;
@@ -40,13 +50,19 @@ public class TransfersController {
     )
     public TransfersPageDto getAllTransfers(
             @Parameter(description = "Идентификатор клиента", required = true, schema = @Schema(type = "string", maxLength = 10, example = "1234567890"))
-            @RequestHeader(name = "client-id") String clientId
+            @RequestHeader(name = "client-id") String clientId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
+        if (size > 1000) {
+            size = 1000;
+        }
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Transfer> transfersPage = transfersService.getAllTransfers(clientId, pageable);
         return new TransfersPageDto(
-                transfersService
-                        .getAllTransfers(clientId)
-                        .stream()
-                        .map(ENTITY_TO_DTO).collect(Collectors.toList())
+                transfersPage.getContent().stream()
+                        .map(ENTITY_TO_DTO)
+                        .collect(Collectors.toList())
         );
     }
 
