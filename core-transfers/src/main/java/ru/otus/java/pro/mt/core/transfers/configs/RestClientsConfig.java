@@ -6,8 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 import ru.otus.java.pro.mt.core.transfers.factories.RestClientFactory;
 
-import java.util.Map;
-
 @Configuration
 public class RestClientsConfig {
 
@@ -20,14 +18,12 @@ public class RestClientsConfig {
     @Bean
     @ConditionalOnMissingBean(name = "limitsRestClient")
     public RestClient limitsClient() {
-        Map<String, RestClient> clients = restClientFactory.restClients();
-        return clients.get("limits");
+        return restClientFactory.getClient("limits");
     }
 
     @Bean
     @ConditionalOnMissingBean(name = "paymentsRestClient")
     public RestClient paymentsClient() {
-        Map<String, RestClient> clients = restClientFactory.restClients();
-        return clients.get("payments");
+        return restClientFactory.getClient("payments");
     }
 }
