@@ -22,3 +22,13 @@ integrations:
     url: http://localhost:8182/api/v1/limits
     read-timeout: 30s
     write-timeout: 2s
+rest:
+  clients:
+    limits:
+      url: http://localhost:8182/api/v1/limits
+      read-timeout: 30s
+      connect-timeout: 2s
+    payments:
+      url: http://localhost:8182/api/v1/payments
+      read-timeout: 30s
+      connect-timeout: 2s
